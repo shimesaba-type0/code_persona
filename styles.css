@@ -30,6 +30,11 @@ textarea {
   font: inherit;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: minmax(360px, 0.95fr) minmax(480px, 1.25fr);
@@ -155,6 +160,27 @@ button:focus-visible {
 .controls .secondary {
   color: var(--ink);
   background: #edf1ec;
+}
+
+.status-line {
+  min-height: 20px;
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.status-line[data-tone="success"] {
+  color: var(--accent);
+}
+
+.status-line[data-tone="loading"] {
+  color: #8a5a00;
+}
+
+.status-line[data-tone="error"] {
+  color: var(--accent-2);
 }
 
 .result-grid {

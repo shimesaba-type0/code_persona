@@ -2,6 +2,7 @@ const sourceText = document.querySelector("#sourceText");
 const analyzeButton = document.querySelector("#analyzeButton");
 const clearButton = document.querySelector("#clearButton");
 const sampleButton = document.querySelector("#sampleButton");
+const statusLine = document.querySelector("#statusLine");
 
 const personaName = document.querySelector("#personaName");
 const blendLabel = document.querySelector("#blendLabel");
@@ -228,7 +229,8 @@ function renderTraits(items) {
   items.forEach((item) => {
     const trait = document.createElement("span");
     trait.className = "trait";
-    trait.textContent = `${item.name.replace("タイプ", "")}: ${Math.round(item.score)}`;
+    const label = item.label || item.name || "気配";
+    trait.textContent = `${label.replace("タイプ", "")}: ${Math.round(item.score)}`;
     traits.appendChild(trait);
   });
 }
@@ -266,15 +268,23 @@ function eyeMarkup(expression) {
   return `<circle cx="116" cy="146" r="12" fill="#1e2420"/><circle cx="204" cy="146" r="12" fill="#1e2420"/>`;
 }
 
+function safeColor(value, fallback) {
+  return /^#[0-9a-f]{6}$/i.test(value || "") ? value : fallback;
+}
+
 function renderFace(primary, secondary, score) {
   const hairTilt = score % 2 === 0 ? -8 : 8;
+  const primaryColor = safeColor(primary.color, "#0b7a75");
+  const secondaryColor = safeColor(secondary.color, "#577590");
+  const primaryAccent = safeColor(primary.accent, "#f2c14e");
+  const secondaryAccent = safeColor(secondary.accent, "#e9c46a");
   personaFace.innerHTML = `
     <title id="faceTitle">生成されたペルソナの顔</title>
     <desc id="faceDesc">${primary.name} の雰囲気を持つキャラクター</desc>
     <defs>
       <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0%" stop-color="${primary.accent}"/>
-        <stop offset="100%" stop-color="${secondary.color}"/>
+        <stop offset="0%" stop-color="${primaryAccent}"/>
+        <stop offset="100%" stop-color="${secondaryColor}"/>
       </linearGradient>
       <linearGradient id="faceTone" x1="0" x2="1">
         <stop offset="0%" stop-color="#ffd8b8"/>
@@ -285,13 +295,13 @@ function renderFace(primary, secondary, score) {
     <circle cx="82" cy="74" r="34" fill="rgba(255,255,255,.25)"/>
     <circle cx="252" cy="246" r="48" fill="rgba(255,255,255,.2)"/>
     <path d="M82 136 C84 72 234 72 238 136 L238 184 C238 238 206 272 160 272 C114 272 82 238 82 184 Z" fill="url(#faceTone)" stroke="#1e2420" stroke-width="6"/>
-    <path d="M83 135 C94 64 221 55 243 135 C213 112 181 104 139 112 C113 118 98 128 83 135 Z" fill="${primary.color}" stroke="#1e2420" stroke-width="6" transform="rotate(${hairTilt} 160 116)"/>
+    <path d="M83 135 C94 64 221 55 243 135 C213 112 181 104 139 112 C113 118 98 128 83 135 Z" fill="${primaryColor}" stroke="#1e2420" stroke-width="6" transform="rotate(${hairTilt} 160 116)"/>
     ${eyeMarkup(primary.expression)}
     <path d="M160 158 C154 176 153 184 164 186" fill="none" stroke="#1e2420" stroke-width="6" stroke-linecap="round"/>
     <path d="${facePath(primary.expression)}" fill="none" stroke="#1e2420" stroke-width="7" stroke-linecap="round"/>
-    <circle cx="90" cy="186" r="13" fill="${secondary.accent}" opacity=".75"/>
-    <circle cx="230" cy="186" r="13" fill="${secondary.accent}" opacity=".75"/>
-    <rect x="74" y="262" width="172" height="34" rx="17" fill="${primary.color}" stroke="#1e2420" stroke-width="6"/>
+    <circle cx="90" cy="186" r="13" fill="${secondaryAccent}" opacity=".75"/>
+    <circle cx="230" cy="186" r="13" fill="${secondaryAccent}" opacity=".75"/>
+    <rect x="74" y="262" width="172" height="34" rx="17" fill="${primaryColor}" stroke="#1e2420" stroke-width="6"/>
   `;
 }
 
@@ -311,26 +321,30 @@ function midnightLine(primary, secondary) {
   return `commit: ${verbs[primary.id]} with ${secondary.id}`;
 }
 
-function update() {
-  const text = sourceText.value.trim();
-  if (!text) {
-    personaName.textContent = "未召喚";
-    blendLabel.textContent = "主人格 70% + 隠れ人格 30%";
-    scoreLabel.textContent = "0";
-    scoreMeter.style.width = "0%";
-    traits.innerHTML = "";
-    catchphrase.textContent = "貼り付け待ち。";
-    specialMove.textContent = "まだ発動していない。";
-    weakness.textContent = "入力からにじみ出る気配を待っている。";
-    reviewLine.textContent = "「ここ、意図だけ少し足しておくと未来が助かりそう」";
-    renderChips(dangerWords, [], "まだ平穏");
-    midnightCommit.textContent = "commit: summon-persona";
-    pairBuddy.textContent = "ログを貼ると現れる。";
-    slackStamp.textContent = ":waiting_for_diff:";
-    renderFace(personas[2], personas[4], 0);
-    return;
-  }
+function setStatus(message, tone = "idle") {
+  statusLine.textContent = message;
+  statusLine.dataset.tone = tone;
+}
 
+function renderEmpty() {
+  personaName.textContent = "未召喚";
+  blendLabel.textContent = "主人格 70% + 隠れ人格 30%";
+  scoreLabel.textContent = "0";
+  scoreMeter.style.width = "0%";
+  traits.innerHTML = "";
+  catchphrase.textContent = "貼り付け待ち。";
+  specialMove.textContent = "まだ発動していない。";
+  weakness.textContent = "入力からにじみ出る気配を待っている。";
+  reviewLine.textContent = "「ここ、意図だけ少し足しておくと未来が助かりそう」";
+  renderChips(dangerWords, [], "まだ平穏");
+  midnightCommit.textContent = "commit: summon-persona";
+  pairBuddy.textContent = "ログを貼ると現れる。";
+  slackStamp.textContent = ":waiting_for_diff:";
+  renderFace(personas[2], personas[4], 0);
+  setStatus("ローカル診断で待機中。API サーバー起動時は LLM 診断を使います。");
+}
+
+function renderLocal(text, statusMessage = "ローカル診断を表示中。人格を錬成すると LLM 診断を試します。") {
   const result = analyze(text);
   personaName.textContent = result.primary.name;
   blendLabel.textContent = `主人格 ${result.primaryRatio}% + 隠れ人格 ${result.secondaryRatio}%: ${result.secondary.name.replace("タイプ", "")}`;
@@ -346,9 +360,85 @@ function update() {
   pairBuddy.textContent = result.primary.buddy;
   slackStamp.textContent = result.primary.stamp;
   renderFace(result.primary, result.secondary, result.score);
+  setStatus(statusMessage);
 }
 
-analyzeButton.addEventListener("click", update);
+function renderApiPersona(payload) {
+  const data = payload.persona;
+  const face = data.face || {};
+  const primary = {
+    name: data.personaName,
+    color: face.primaryColor,
+    accent: face.accentColor,
+    expression: face.expression,
+  };
+  const secondary = {
+    color: face.secondaryColor,
+    accent: face.accentColor,
+  };
+
+  personaName.textContent = data.personaName;
+  blendLabel.textContent = `主人格 ${data.primaryPersona.ratio}%: ${data.primaryPersona.label} + 隠れ人格 ${data.hiddenPersona.ratio}%: ${data.hiddenPersona.label}`;
+  scoreLabel.textContent = data.score;
+  scoreMeter.style.width = `${data.score}%`;
+  renderTraits(data.traits || []);
+  catchphrase.textContent = data.catchphrase;
+  specialMove.textContent = data.specialMove;
+  weakness.textContent = data.weakness;
+  reviewLine.textContent = data.reviewLine;
+  renderChips(dangerWords, data.dangerWords || [], "危険ワードなし");
+  midnightCommit.textContent = data.midnightCommit;
+  pairBuddy.textContent = data.pairBuddy;
+  slackStamp.textContent = data.slackStamp;
+  renderFace(primary, secondary, data.score);
+  setStatus(`LLM 診断完了: ${payload.model}`, "success");
+}
+
+function update() {
+  const text = sourceText.value.trim();
+  if (!text) {
+    renderEmpty();
+    return;
+  }
+
+  renderLocal(text);
+}
+
+async function analyzeWithApi() {
+  const text = sourceText.value.trim();
+  if (!text) {
+    renderEmpty();
+    sourceText.focus();
+    return;
+  }
+
+  analyzeButton.disabled = true;
+  analyzeButton.textContent = "錬成中...";
+  setStatus("LLM 診断中。入力テキストを /api/persona に送信しています。", "loading");
+
+  try {
+    const response = await fetch("/api/persona", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ input: text }),
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      throw new Error(payload.error || "API request failed");
+    }
+
+    renderApiPersona(payload);
+  } catch (error) {
+    renderLocal(text, `API 診断に失敗したためローカル診断を表示中: ${error.message}`);
+    statusLine.dataset.tone = "error";
+  } finally {
+    analyzeButton.disabled = false;
+    analyzeButton.textContent = "人格を錬成";
+  }
+}
+
+analyzeButton.addEventListener("click", analyzeWithApi);
 sourceText.addEventListener("input", update);
 clearButton.addEventListener("click", () => {
   sourceText.value = "";
