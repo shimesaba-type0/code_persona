@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>コードの背後にいる人</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Code Persona Alchemy</p>
+            <h1>コードの背後にいる人</h1>
+          </div>
+          <button class="icon-button" id="sampleButton" type="button" aria-label="サンプルを入れる" title="サンプルを入れる">
+            <span aria-hidden="true">+</span>
+          </button>
+        </header>
+
+        <section class="input-panel">
+          <label for="sourceText">コード、git log、レビューコメント、障害対応ログを貼る</label>
+          <textarea
+            id="sourceText"
+            spellcheck="false"
+            placeholder="例: fix timeout retry... TODO remove temp service manager..."
+          ></textarea>
+          <div class="controls">
+            <button id="analyzeButton" type="button">人格を錬成</button>
+            <button id="clearButton" class="secondary" type="button">消す</button>
+          </div>
+        </section>
+      </section>
+
+      <section class="result-grid" aria-live="polite">
+        <article class="portrait-panel">
+          <div class="portrait-frame">
+            <svg id="personaFace" viewBox="0 0 320 320" role="img" aria-labelledby="faceTitle faceDesc">
+              <title id="faceTitle">生成されたペルソナの顔</title>
+              <desc id="faceDesc">解析結果に応じて表情と色が変わるキャラクター</desc>
+            </svg>
+          </div>
+          <div class="persona-title">
+            <p id="blendLabel">主人格 70% + 隠れ人格 30%</p>
+            <h2 id="personaName">未召喚</h2>
+          </div>
+        </article>
+
+        <article class="diagnosis-panel">
+          <div class="score-row">
+            <span>診断スコア</span>
+            <strong id="scoreLabel">0</strong>
+          </div>
+          <div class="meter" aria-hidden="true"><span id="scoreMeter"></span></div>
+
+          <div class="traits" id="traits"></div>
+
+          <div class="detail-grid">
+            <section>
+              <h3>口癖</h3>
+              <p id="catchphrase">貼り付け待ち。</p>
+            </section>
+            <section>
+              <h3>得意技</h3>
+              <p id="specialMove">まだ発動していない。</p>
+            </section>
+            <section>
+              <h3>弱点</h3>
+              <p id="weakness">入力からにじみ出る気配を待っている。</p>
+            </section>
+            <section>
+              <h3>レビューで言いそう</h3>
+              <p id="reviewLine">「ここ、意図だけ少し足しておくと未来が助かりそう」</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="fun-panel">
+          <section>
+            <h3>危険ワード検出</h3>
+            <div class="chips" id="dangerWords"></div>
+          </section>
+          <section>
+            <h3>深夜2時のコミット</h3>
+            <p id="midnightCommit">commit: summon-persona</p>
+          </section>
+          <section>
+            <h3>相性のいいペアプロ相手</h3>
+            <p id="pairBuddy">ログを貼ると現れる。</p>
+          </section>
+          <section>
+            <h3>Slack スタンプ</h3>
+            <p id="slackStamp">:waiting_for_diff:</p>
+          </section>
+        </article>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
