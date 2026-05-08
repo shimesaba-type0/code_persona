@@ -3,6 +3,8 @@ const analyzeButton = document.querySelector("#analyzeButton");
 const clearButton = document.querySelector("#clearButton");
 const sampleButton = document.querySelector("#sampleButton");
 const statusLine = document.querySelector("#statusLine");
+const charCount = document.querySelector("#charCount");
+const privacyWarning = document.querySelector("#privacyWarning");
 
 const personaName = document.querySelector("#personaName");
 const blendLabel = document.querySelector("#blendLabel");
@@ -163,6 +165,15 @@ const personas = [
 ];
 
 const dangerLexicon = ["TODO", "FIXME", "HACK", "temp", "any", "catch (e) {}", "console.log", "big update", "WIP", "一旦"];
+const maxInputChars = 24000;
+const sensitivePatterns = [
+  { label: "API key らしき文字列", pattern: /\b(sk-[a-z0-9_-]{16,}|OPENAI_API_KEY|api[_-]?key)\b/i },
+  { label: "token らしき文字列", pattern: /\b(token|access_token|refresh_token|bearer\s+[a-z0-9._-]{12,})\b/i },
+  { label: "password らしき文字列", pattern: /\b(password|passwd|pwd|db_password)\b/i },
+  { label: "private key らしき文字列", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/i },
+  { label: "AWS key らしき文字列", pattern: /\b(AKIA|ASIA)[A-Z0-9]{16}\b/ },
+  { label: "接続文字列らしき文字列", pattern: /\b(postgres|mysql|mongodb):\/\/[^ \n]+/i },
+];
 
 const sample = `commit 9f00d: hotfix timeout retry around payment callback
 TODO remove temp flag after release
@@ -222,6 +233,29 @@ function renderChips(container, items, emptyLabel) {
     chip.textContent = item;
     container.appendChild(chip);
   });
+}
+
+function getSensitiveLabels(text) {
+  return sensitivePatterns.filter((item) => item.pattern.test(text)).map((item) => item.label);
+}
+
+function updateInputMeta(text) {
+  const length = text.length;
+  const warnings = getSensitiveLabels(text);
+  charCount.textContent = `${length} / ${maxInputChars}`;
+  charCount.dataset.tone = length > maxInputChars ? "error" : length > maxInputChars * 0.85 ? "warn" : "idle";
+
+  const messages = [];
+  if (length > maxInputChars) {
+    messages.push(`入力が長すぎます。${maxInputChars} 文字以内にしてください。`);
+  }
+  if (warnings.length) {
+    messages.push(`送信前に確認: ${warnings.join("、")} を検出しました。値は表示していません。`);
+  }
+
+  privacyWarning.hidden = messages.length === 0;
+  privacyWarning.textContent = messages.join(" ");
+  return { length, warnings, hasBlockingIssue: length > maxInputChars };
 }
 
 function renderTraits(items) {
@@ -342,6 +376,7 @@ function renderEmpty() {
   slackStamp.textContent = ":waiting_for_diff:";
   renderFace(personas[2], personas[4], 0);
   setStatus("ローカル診断で待機中。API サーバー起動時は LLM 診断を使います。");
+  updateInputMeta("");
 }
 
 function renderLocal(text, statusMessage = "ローカル診断を表示中。人格を錬成すると LLM 診断を試します。") {
@@ -361,6 +396,7 @@ function renderLocal(text, statusMessage = "ローカル診断を表示中。人
   slackStamp.textContent = result.primary.stamp;
   renderFace(result.primary, result.secondary, result.score);
   setStatus(statusMessage);
+  updateInputMeta(text);
 }
 
 function renderApiPersona(payload) {
@@ -391,7 +427,8 @@ function renderApiPersona(payload) {
   pairBuddy.textContent = data.pairBuddy;
   slackStamp.textContent = data.slackStamp;
   renderFace(primary, secondary, data.score);
-  setStatus(`LLM 診断完了: ${payload.model}`, "success");
+  const warningNote = payload.inputWarnings?.length ? ` 入力注意: ${payload.inputWarnings.join("、")}` : "";
+  setStatus(`LLM 診断完了: ${payload.model}.${warningNote}`, "success");
 }
 
 function update() {
@@ -409,6 +446,13 @@ async function analyzeWithApi() {
   if (!text) {
     renderEmpty();
     sourceText.focus();
+    return;
+  }
+
+  const meta = updateInputMeta(text);
+  if (meta.hasBlockingIssue) {
+    renderLocal(text, `入力が ${maxInputChars} 文字を超えているため、API 送信せずローカル診断を表示中。`);
+    statusLine.dataset.tone = "error";
     return;
   }
 

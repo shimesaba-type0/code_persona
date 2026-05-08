@@ -20,6 +20,8 @@ OPENAI_API_KEY=your_api_key_here npm start
 
 貼り付けた入力は LLM 診断時に OpenAI API へ送信されます。secret、token、password などの秘密情報を含むログやコードは、送信前に取り除いてください。
 
+アプリは 24,000 文字を超える入力を API 送信しません。また、API key、token、password、private key、接続文字列らしき文字列を検出した場合は送信前に画面上で注意します。検出時も値そのものは表示しません。
+
 API キーなしで試す場合は、`index.html` を直接開いてローカル診断だけを使うこともできます。
 
 ## License

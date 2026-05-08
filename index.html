@@ -20,12 +20,17 @@
         </header>
 
         <section class="input-panel">
-          <label for="sourceText">コード、git log、レビューコメント、障害対応ログを貼る</label>
+          <div class="input-heading">
+            <label for="sourceText">コード、git log、レビューコメント、障害対応ログを貼る</label>
+            <span id="charCount">0 / 24000</span>
+          </div>
+          <p class="privacy-note">LLM 診断時は入力テキストを API に送信します。秘密情報は貼る前に取り除いてください。</p>
           <textarea
             id="sourceText"
             spellcheck="false"
             placeholder="例: fix timeout retry... TODO remove temp service manager..."
           ></textarea>
+          <div class="warning-box" id="privacyWarning" hidden></div>
           <div class="controls">
             <button id="analyzeButton" type="button">人格を錬成</button>
             <button id="clearButton" class="secondary" type="button">消す</button>
